@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t iojoe/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true iojoe/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t iojoe/multi-client ./client
+  - docker build -t iojoe/multi-nginx ./nginx
+  - docker build -t iojoe/multi-server ./server
+  - docker build -t iojoe/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # take those images and push them to docker hub
+  - docker push iojoe/multi-client
+  - docker push iojoe/multi-nginx
+  - docker push iojoe/multi-server
+  - docker push iojoe/multi-worker
